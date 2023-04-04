@@ -8,6 +8,8 @@ def main():
     c.set_title('A title')
     c.set_subtitle('A subtitle')
     c.set_source_label('Source: A source')
+    c.axes.set_xaxis_label('Unit price for a fruit batch')
+    c.axes.set_yaxis_label('Number of fruits')
     # c.callout.text('A callout', 25, 25)
     # c.axes.set_xaxis_range(0, 50)
     # c.axes.set_yaxis_range(0, 75)
@@ -23,10 +25,11 @@ def main():
     ndata = data.groupby(['fruit', 'country'])[['quantity']].sum().reset_index()
 
     # print(data.head(50))
-    c.plot.histogram(data_frame=data.head(50),
+    c.plot.cumulative_histogram(data_frame=data.head(50),
             values_column='unit_price',
             color_column='fruit',
             )
+#     c.plot.cumulative_histogram(data_frame=data, values_column="unit_price",bins=50)
     
     c.show()
     with open('data.txt', 'w') as f:
