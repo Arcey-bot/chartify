@@ -656,6 +656,7 @@ class PlotNumericDensityXY(BasePlot):
 
     Methods:
         - histogram
+        - cumulative_histogram
         - kde
     """
 
