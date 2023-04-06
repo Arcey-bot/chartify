@@ -780,6 +780,74 @@ class PlotNumericDensityXY(BasePlot):
             self._chart.style._apply_settings("legend")
 
         return self._chart
+    
+    def stacked_histogram(
+        self,
+        data_frame,
+        values_column,
+        color_column=None,
+        color_order=None,
+        method="count",
+        bins="auto",
+    ):
+        vertical = self._chart.axes._vertical
+
+        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
+
+        for color_value, color in zip(color_values, colors):
+            if color_column is None:  # Single line
+                sliced_data = data_frame[[values_column]]
+            else:
+                sliced_data = data_frame[data_frame[color_column] == color_value][[values_column]]
+
+            density = True if method == "density" else False
+            hist, edges = np.histogram(sliced_data, density=density, bins=bins)
+
+            if method == "mass":
+                hist = hist * 1.0 / hist.sum()
+            
+
+            histogram_data1 = pd.DataFrame({"values": hist, "min_edge": edges[:-1], "max_edge": edges[1:]})
+            histogram_data2 = pd.DataFrame({"values": hist[::-1], "min_edge": edges[:-1], "max_edge": edges[1:]})
+            histogram_data = pd.concat([histogram_data1, histogram_data2], ignore_index=True, sort=False)
+
+            source = self._named_column_data_source(histogram_data, series_name=color_value)
+
+            color_value = str(color_value) if color_value is not None else color_value
+
+            if vertical:
+                self._plot_with_legend(
+                    self._chart.figure.quad,
+                    legend_label=color_value,
+                    top="values",
+                    bottom=0,
+                    left="min_edge",
+                    right="max_edge",
+                    source=source,
+                    fill_color=color,
+                    line_color=color,
+                    alpha=0.3,
+                )
+
+            else:
+                self._plot_with_legend(
+                    self._chart.figure.quad,
+                    legend_label=color_value,
+                    top="max_edge",
+                    bottom="min_edge",
+                    left=0,
+                    right="values",
+                    source=source,
+                    fill_color=color,
+                    line_color=color,
+                    alpha=0.3,
+                )
+
+        # Set legend defaults if there are multiple series.
+        if color_column is not None:
+            self._chart.style._apply_settings("legend")
+
+        return self._chart
 
     def cumulative_histogram(
         self,
@@ -1067,6 +1135,7 @@ class PlotMixedTypeXY(BasePlot):
         categorical_order_by=None,
         categorical_order_ascending=False,
         color_column=None,
+        allow_nan=False,
     ):
         """Constructs ColumnDataSource
 
@@ -1108,9 +1177,12 @@ class PlotMixedTypeXY(BasePlot):
             values=numeric_column,
             aggfunc="sum",
         )
+
         # NA columns break the stacks
         # Might want to make this conditional in the future for parallel plots.
-        source = source.fillna(0)
+        # Fill nans with 0 if allow_nan is False
+        if not allow_nan:
+            source = source.fillna(0)
 
         if color_column:
             # Merge color column
@@ -1952,6 +2024,7 @@ class PlotMixedTypeXY(BasePlot):
         line_dash="solid",
         line_width=4,
         alpha=1.0,
+        allow_nan=False
     ):
         """Parallel coordinate plot.
 
@@ -1996,6 +2069,7 @@ class PlotMixedTypeXY(BasePlot):
             stack_column=color_column,
             categorical_order_by=categorical_order_by,
             categorical_order_ascending=categorical_order_ascending,
+            allow_nan=allow_nan,
         )
 
         colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
