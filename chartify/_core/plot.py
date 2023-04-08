@@ -579,7 +579,7 @@ class PlotNumericXY(BasePlot):
                     )
                 )
                 .reset_index(drop=False)
-                .fillna(0)
+                # .fillna(0)
             )
 
         if second_y_column is None and color_column is not None:
