@@ -1448,6 +1448,207 @@ class PlotMixedTypeXY(BasePlot):
 
         return self._chart
 
+    def _construct_stack_source(
+        self,
+        data_frame,
+        categorical_columns,
+        numeric_column,
+        stack_column=None,
+        normalize=False,
+        categorical_order_by=None,
+        categorical_order_ascending=False,
+        color_column=None,
+    ):
+        if not isinstance(categorical_columns, str):
+            categorical_columns = [c for c in categorical_columns]
+        else:
+            categorical_columns = [categorical_columns]
+
+        # Check that there's only one row per grouping
+        grouping = categorical_columns[:]
+        if stack_column is not None:
+            grouping.append(stack_column)
+        rows_per_grouping = data_frame.groupby(grouping).size()
+        max_one_row_per_grouping = all(rows_per_grouping <= 1)
+        if not max_one_row_per_grouping:
+            raise ValueError(
+                """Each categorical grouping should have at most 1 observation.Group the dataframe and aggregate before passing tothe plot function."""
+            )
+
+        # Cast stack column to strings
+        # Plotting functions will break with non-str types.
+        type_map = {}
+        if stack_column is not None:
+            type_map[stack_column] = str
+        # Apply mapping within pivot so original data frame isn't modified.
+        source = pd.pivot_table(
+            data_frame.astype(type_map),
+            columns=stack_column,
+            index=categorical_columns,
+            values=numeric_column,
+            aggfunc="sum",
+        )
+        # NA columns break the stacks
+        # Might want to make this conditional in the future for parallel plots.
+        source = source.fillna(0)
+
+        if color_column:
+            # Merge color column
+            color_df = data_frame.astype(type_map)
+            color_df["color_column"] = color_df[color_column].astype(str)
+            color_df = color_df.set_index(categorical_columns)["color_column"]
+            source = source.join(color_df)
+
+        # Normalize values at the grouped levels.
+        # Only relevant for stacked objects
+        if normalize:
+            source = source.div(source.sum(axis=1), axis=0)
+
+        source = self._sort_categories(source, categorical_columns, categorical_order_by, categorical_order_ascending)
+
+        # Cast all categorical columns to strings
+        # Plotting functions will break with non-str types.
+        if isinstance(source.index, pd.MultiIndex):
+            for level in range(len(source.index.levels)):
+                source.index = source.index.set_levels(source.index.levels[level].astype(str), level=level)
+        else:
+            source.index = source.index.astype(str)
+
+        factors = source.index
+        source = source.reset_index(drop=True)
+        stack_values = source.columns
+        source = self._named_column_data_source(source, series_name=None)
+        source.add(factors, "factors")
+
+        return source, factors, stack_values
+
+
+    def text_stacked_total(
+        self,
+        data_frame,
+        categorical_columns,
+        numeric_column,
+        text_column,
+        stack_column,
+        normalize=False,
+        color_column=None,
+        color_order=None,
+        categorical_order_by="values",
+        categorical_order_ascending=False,
+        font_size="1em",
+        x_offset=0,
+        y_offset=0,
+        angle=0,
+        text_color=None,
+    ):
+        vertical = self._chart.axes._vertical
+        text_font = self._chart.style._get_settings("text_callout_and_plot")["font"]
+
+        source, factors, stack_values = self._construct_stack_source(
+            data_frame,
+            categorical_columns,
+            numeric_column,
+            stack_column,
+            normalize=normalize,
+            categorical_order_by=categorical_order_by,
+            categorical_order_ascending=categorical_order_ascending,
+        )
+
+        if text_color:
+            text_color = Color(text_color).get_hex_l()
+            if stack_order is None:
+                stack_order = sorted(data_frame[stack_column].unique())
+            else:
+                # If stack order is set then
+                # make sure it includes all the levels.
+                if not set(data_frame[stack_column].unique()).issubset(set(stack_order)):
+                    raise ValueError(
+                        """Color order must include
+                                    all unique factors of variable `%s`."""
+                        % stack_order
+                    )
+            colors, color_values = [text_color], [None]
+        else:
+            colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
+
+        self._set_categorical_axis_default_factors(vertical, factors)
+        self._set_categorical_axis_default_range(vertical, data_frame, numeric_column)
+
+        # Set numeric axis format to percentages.
+        if normalize:
+            if vertical:
+                self._chart.axes.set_yaxis_tick_format("0%")
+            else:
+                self._chart.axes.set_xaxis_tick_format("0%")
+
+        if vertical:
+            text_align = "center"
+            text_baseline = "bottom"
+            x_value, y_value = "factors", numeric_column
+            y_offset = y_offset - 4
+        else:
+            y_value, x_value = "factors", numeric_column
+            text_align = "left"
+            text_baseline = "middle"
+            x_offset = x_offset + 10
+
+        for color_value, color in zip(color_values, colors):
+            sliced_data = data_frame[(data_frame[color_column] == color_value)]
+
+            # Construct a new source based on the sliced data.
+            source, factors, _ = self._construct_source(
+                sliced_data.groupby("fruit")["quantity"].sum().reset_index(),
+                categorical_columns,
+                numeric_column,
+                categorical_order_by=categorical_order_by,
+                categorical_order_ascending=categorical_order_ascending,
+            )
+
+            # Text column isn't in the source so it needs to be added.
+            # sliced_data["text_column"] = sliced_data[numeric_column].sum()
+            # total = sliced_data[numeric_column].sum()
+
+            # May be able to use construct's returned stack values instead of source data
+            # Also may want to switch to using the regular text method's impl instead
+            # sliced_data = (
+            #     sliced_data.astype(str).set_index(stack_column).reindex(stack_values).reset_index()
+            # )
+            # new_data = sliced_data.groupby(categorical_columns)[numeric_column].
+            # source.add(np.array([total], dtype=np.int64), name="text_column")
+
+            # # Construct a new source based on the sliced data.
+            # source, factors, stack_values = self._construct_stack_source(
+            #     sliced_data,
+            #     categorical_columns,
+            #     numeric_column,
+            #     stack_column,
+            #     categorical_order_by=categorical_order_by,
+            #     categorical_order_ascending=categorical_order_ascending,
+            # )
+            # # May be able to use construct's returned stack values instead of source data
+            # # Also may want to switch to using the regular text method's impl instead
+            # sliced_data = (
+            #     sliced_data.astype(str).set_index(stack_column).reindex(stack_values).reset_index()
+            # )
+            
+            self._chart.figure.text(
+                text="quantity",
+                x=x_value,
+                y=y_value,
+                text_font_size=font_size,
+                source=source,
+                text_color=color,
+                y_offset=y_offset,
+                x_offset=x_offset,
+                angle=angle,
+                angle_units="deg",
+                text_align=text_align,
+                text_baseline=text_baseline,
+                text_font=text_font,
+            )
+
+        return self._chart
+
     def bar(
         self,
         data_frame,
