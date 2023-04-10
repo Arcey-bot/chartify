@@ -1528,7 +1528,6 @@ class PlotMixedTypeXY(BasePlot):
         data_frame,
         categorical_columns,
         numeric_column,
-        text_column,
         stack_column,
         normalize=False,
         color_column=None,
@@ -1556,17 +1555,6 @@ class PlotMixedTypeXY(BasePlot):
 
         if text_color:
             text_color = Color(text_color).get_hex_l()
-            if stack_order is None:
-                stack_order = sorted(data_frame[stack_column].unique())
-            else:
-                # If stack order is set then
-                # make sure it includes all the levels.
-                if not set(data_frame[stack_column].unique()).issubset(set(stack_order)):
-                    raise ValueError(
-                        """Color order must include
-                                    all unique factors of variable `%s`."""
-                        % stack_order
-                    )
             colors, color_values = [text_color], [None]
         else:
             colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
@@ -1593,11 +1581,14 @@ class PlotMixedTypeXY(BasePlot):
             x_offset = x_offset + 10
 
         for color_value, color in zip(color_values, colors):
-            sliced_data = data_frame[(data_frame[color_column] == color_value)]
+            if color_column is None:  # Single series
+                sliced_data = data_frame
+            else:
+                sliced_data = data_frame[data_frame[color_column] == color_value]
 
             # Construct a new source based on the sliced data.
             source, factors, _ = self._construct_source(
-                sliced_data.groupby("fruit")["quantity"].sum().reset_index(),
+                sliced_data.groupby(categorical_columns)[numeric_column].sum().reset_index(),
                 categorical_columns,
                 numeric_column,
                 categorical_order_by=categorical_order_by,
@@ -1632,7 +1623,7 @@ class PlotMixedTypeXY(BasePlot):
             # )
             
             self._chart.figure.text(
-                text="quantity",
+                text=numeric_column,
                 x=x_value,
                 y=y_value,
                 text_font_size=font_size,

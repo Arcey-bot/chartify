@@ -67,8 +67,7 @@ c.plot.text_stacked_total(
     categorical_columns=["fruit"],
     numeric_column="quantity",
     stack_column="country",
-    text_column="quantity",
-    color_column="fruit",
+    text_color="black"
 )
 # c.plot.text(
 #     data_frame=data,
