@@ -790,6 +790,59 @@ class PlotNumericDensityXY(BasePlot):
         method="count",
         bins="auto",
     ):
+        """
+        Calculates and plots a cumulative histogram of the given data source,
+        with options for grouping by color and choosing the method for
+        normalization.
+        
+        Args:
+            data_frame (pandas.DataFrame): Data source for the plot.
+            values_column (str): Column name for numeric values to be plotted.
+            color_column (str, optional): Column name to group by on the color
+                dimension.
+            color_order (list, optional): List of values within the
+                'color_column' for specific sorting of the colors.
+            method (str, optional):
+            - 'count': Result will contain the number of samples at each bin.
+            - 'density': Result is the value of the probability density
+                function at each bin.
+            The PDF is normalized so that the integral over the range is 1.
+            - 'mass': Result is the value of the probability mass function
+                at each bin.
+            The PMF is normalized so that the value is equivalent to the
+                sample count at each bin divided by the total count.
+            bins (int or sequence of scalars or str, optional):
+                If bins is an int, it defines the number of equal-width bins
+                in the given range.
+                If bins is a sequence, it defines the bin edges, including
+                the rightmost edge, allowing for non-uniform bin widths.
+            See numpy.histogram documentation for more details.
+            - ‘auto’:
+            Maximum of the ‘sturges’ and ‘fd’ estimators.
+            Provides good all around performance.
+            - ‘fd’ (Freedman Diaconis Estimator)
+            Robust (resilient to outliers) estimator that takes into account
+                data variability and data size.
+            - ‘doane’
+            An improved version of Sturges’ estimator that works better with
+                non-normal datasets.
+            - ‘scott’
+            Less robust estimator that that takes into account data variability
+                and data size.
+            - ‘rice’
+            Estimator does not take variability into account, only data size.
+                Commonly overestimates number of bins required.
+            - ‘sturges’
+            R’s default method, only accounts for data size.
+            Only optimal for gaussian data and underestimates number of bins
+                for large non-gaussian datasets.
+            - ‘sqrt’
+            Square root (of data size) estimator, used by Excel and other
+                programs for its speed and simplicity.
+        Returns:
+            bokeh.plotting.figure.Figure: A Bokeh figure object that can
+            be further customized and/or displayed.
+        """
         vertical = self._chart.axes._vertical
         colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
 
