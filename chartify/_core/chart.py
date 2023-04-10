@@ -153,6 +153,12 @@ y_axis_type='{y_axis_type}')
             y_axis_type=self._y_axis_type,
         )
 
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
     def _initialize_figure(self, x_axis_type, y_axis_type):
         range_args = {}
         if x_axis_type == "categorical":
