@@ -4,10 +4,27 @@ import chartify._core.plot
 import chartify.examples as examples
 
 def main():
-    chart = chartify.Chart(blank_labels=True, x_axis_type="categorical")
+    chart = chartify.Chart(x_axis_type="density")
+
+    data = {
+    'United States': 157,
+    'United Kingdom': 93,
+    'Japan': 89,
+    'China': 63,
+    'Germany': 44,
+    'India': 42,
+    'Italy': 40,
+    'Australia': 35,
+    'Brazil': 32,
+    'France': 31,
+    'Taiwan': 31,
+    'Spain': 29
+}
+    data = pd.Series(data).reset_index(name='value').rename(columns={'index': 'country'})
+
 
     with chart as c:
-        data = examples.example_data()
+        # data = examples.example_data()
         c.set_title('Cumulative Frequency Histogram')
         c.set_subtitle('Example Code Running')
         c.set_source_label('Source: A source')
@@ -16,12 +33,11 @@ def main():
         c.style.set_color_palette('categorical', 'Dark2')
         c.set_title("Parallel coordinate charts")
         c.set_subtitle("")
-        total_quantity_by_fruit_and_country = data.groupby(["fruit", "country"])["quantity"].sum().reset_index()
-        c.plot.bar(
-            data_frame=total_quantity_by_fruit_and_country,
-            categorical_columns=["fruit", "country"],
-            numeric_column="quantity",
-            color_column="fruit"
+        c.plot.pie(
+            data_frame=data,
+            categorical_columns=["country"],
+            numeric_column="value",
+            color_column="country"
         )    
         c.show()
 
