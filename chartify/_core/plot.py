@@ -2275,7 +2275,7 @@ class PlotMixedTypeXY(BasePlot):
     def pie(
         self,
         data_frame,
-        categorical_columns,
+        categorical_column,
         numeric_column,
         color_column=None,
         color_order=None,
@@ -2288,7 +2288,7 @@ class PlotMixedTypeXY(BasePlot):
         data['color'] = Category20c[len(data)]
         source, factors, _ = self._construct_source(
             data_frame,
-            categorical_columns,
+            categorical_column,
             numeric_column,
             color_column=color_column,
             categorical_order_by="values",
@@ -2298,8 +2298,8 @@ class PlotMixedTypeXY(BasePlot):
             allow_nan=False,
         )
 
-        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order, categorical_columns)
-
+        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
+        data['color'] = colors
         if color_column is None:
             colors = colors[0]
 
@@ -2309,11 +2309,7 @@ class PlotMixedTypeXY(BasePlot):
         else:
             legend = None
 
-        # self._chart.figure.wedge(x=0, y=1, radius=0.4,
-        #         start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
-        #         line_color="white", fill_color='color', legend_field='country', source=data)
-
-        self._chart.figure = bokeh.plotting.figure()
+        self._chart.figure = bokeh.plotting.figure( tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
         self._chart.figure.axis.axis_label = None
         self._chart.figure.axis.visible = False
         self._chart.figure.grid.grid_line_color = None
@@ -2324,7 +2320,8 @@ class PlotMixedTypeXY(BasePlot):
         end_angle=cumsum('angle'),
         line_color="white", 
         source=data,
-        fill_color='color',)
+        fill_color='color',
+        legend_field=categorical_column)
         
 
         # Set legend defaults if there are multiple series.

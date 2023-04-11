@@ -31,7 +31,7 @@ print(data)
 cc = chartify.Chart(x_axis_type="categorical")
 cc.plot.pie(
     data_frame=data,
-    categorical_columns=["fruit"],
+    categorical_column="fruit",
     numeric_column="quantity",
     color_column="fruit",
 )

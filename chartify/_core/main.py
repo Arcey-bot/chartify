@@ -35,7 +35,7 @@ def main():
         c.set_subtitle("")
         c.plot.pie(
             data_frame=data,
-            categorical_columns=["country"],
+            categorical_column=["country"],
             numeric_column="value",
             color_column="country"
         )    
