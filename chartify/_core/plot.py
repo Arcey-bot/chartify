@@ -2284,7 +2284,6 @@ class PlotMixedTypeXY(BasePlot):
     ):        
         data = data_frame.reset_index()
         data['angle'] = data[numeric_column]/data[numeric_column].sum() * 2* pi
-        # data['color'] = Category20c[len(data)]
 
         colors, _ = self._get_color_and_order(data_frame, color_column, color_order)
         data['color'] = colors
