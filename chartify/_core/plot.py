@@ -534,6 +534,7 @@ class PlotNumericXY(BasePlot):
         color_column=None,
         color_order=None,
         stacked=False,
+        allow_nan=True,
     ):
         """Area plot.
 
@@ -579,8 +580,9 @@ class PlotNumericXY(BasePlot):
                     )
                 )
                 .reset_index(drop=False)
-                # .fillna(0)
             )
+            if not allow_nan:
+                data_frame.fillna(0)
 
         if second_y_column is None and color_column is not None:
             last_y = np.zeros(data_frame.groupby(color_column).size().iloc[0])
