@@ -157,7 +157,7 @@ y_axis_type='{y_axis_type}')
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        del self
 
     def _initialize_figure(self, x_axis_type, y_axis_type):
         range_args = {}
