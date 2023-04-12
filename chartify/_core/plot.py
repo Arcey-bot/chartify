@@ -2277,15 +2277,15 @@ class PlotMixedTypeXY(BasePlot):
         data_frame,
         categorical_column,
         numeric_column,
+        radius=0.6,
         color_column=None,
         color_order=None,
         tooltip=True,
         axis_visible=False
     ):        
         data = data_frame.reset_index()
-        data['angle'] = data[numeric_column]/data[numeric_column].sum() * 2* pi
-
         colors, _ = self._get_color_and_order(data_frame, color_column, color_order)
+        data['angle'] = data[numeric_column]/data[numeric_column].sum() * 2* pi
         data['color'] = colors
 
         if color_column is None:
@@ -2300,15 +2300,18 @@ class PlotMixedTypeXY(BasePlot):
         self._chart.figure.axis.axis_label = None
         self._chart.figure.grid.grid_line_color = None
     
-        self._chart.figure.wedge(
-            x=0,y=0, radius=0.4,
-        start_angle=bokeh.transform.cumsum('angle', include_zero=True),
-        end_angle=bokeh.transform.cumsum('angle'),
-        line_color="white", 
-        source=data,
-        fill_color='color',
-        legend_field=categorical_column)
-        
+        self._plot_with_legend(
+            self._chart.figure.wedge,
+            x=0,
+            y=0,
+            radius=radius,
+            start_angle=bokeh.transform.cumsum('angle', include_zero=True),
+            end_angle=bokeh.transform.cumsum('angle'),
+            line_color="white", 
+            source=data,
+            fill_color='color',
+            legend_field=categorical_column,
+        )
 
         # Set legend defaults if there are multiple series.
         if color_column is not None:
