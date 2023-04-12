@@ -2279,45 +2279,32 @@ class PlotMixedTypeXY(BasePlot):
         numeric_column,
         color_column=None,
         color_order=None,
+        tooltip=True,
+        axis_visible=False
     ):        
-        from bokeh.transform import cumsum
-        from bokeh.palettes import Category20c
-
         data = data_frame.reset_index()
         data['angle'] = data[numeric_column]/data[numeric_column].sum() * 2* pi
-        data['color'] = Category20c[len(data)]
-        source, factors, _ = self._construct_source(
-            data_frame,
-            categorical_column,
-            numeric_column,
-            color_column=color_column,
-            categorical_order_by="values",
-            categorical_order_ascending=False,
-            stack_column=None,
-            normalize=False,
-            allow_nan=False,
-        )
+        # data['color'] = Category20c[len(data)]
 
-        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
+        colors, _ = self._get_color_and_order(data_frame, color_column, color_order)
         data['color'] = colors
+
         if color_column is None:
             colors = colors[0]
 
-        if color_column:
-            legend = bokeh.core.properties.field("color_column")
-            legend = "color_column"
-        else:
-            legend = None
+        if (tooltip):
+            self._chart.figure = bokeh.plotting.figure(tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
 
-        self._chart.figure = bokeh.plotting.figure( tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
+        if (axis_visible):
+            self._chart.figure.axis.visible = False
+
         self._chart.figure.axis.axis_label = None
-        self._chart.figure.axis.visible = False
         self._chart.figure.grid.grid_line_color = None
     
         self._chart.figure.wedge(
             x=0,y=0, radius=0.4,
-        start_angle=cumsum('angle', include_zero=True),
-        end_angle=cumsum('angle'),
+        start_angle=bokeh.transform.cumsum('angle', include_zero=True),
+        end_angle=bokeh.transform.cumsum('angle'),
         line_color="white", 
         source=data,
         fill_color='color',
