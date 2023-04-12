@@ -1067,6 +1067,7 @@ class PlotMixedTypeXY(BasePlot):
         categorical_order_by=None,
         categorical_order_ascending=False,
         color_column=None,
+        allow_nan=False,
     ):
         """Constructs ColumnDataSource
 
@@ -1108,9 +1109,12 @@ class PlotMixedTypeXY(BasePlot):
             values=numeric_column,
             aggfunc="sum",
         )
+
         # NA columns break the stacks
         # Might want to make this conditional in the future for parallel plots.
-        source = source.fillna(0)
+        # Fill nans with 0 if allow_nan is False
+        if not allow_nan:
+            source = source.fillna(0)
 
         if color_column:
             # Merge color column
@@ -1952,6 +1956,7 @@ class PlotMixedTypeXY(BasePlot):
         line_dash="solid",
         line_width=4,
         alpha=1.0,
+        allow_nan=False
     ):
         """Parallel coordinate plot.
 
@@ -1996,6 +2001,7 @@ class PlotMixedTypeXY(BasePlot):
             stack_column=color_column,
             categorical_order_by=categorical_order_by,
             categorical_order_ascending=categorical_order_ascending,
+            allow_nan=allow_nan,
         )
 
         colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
