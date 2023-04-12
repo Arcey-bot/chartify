@@ -29,10 +29,12 @@ print(data)
 
 # show(p)
 cc = chartify.Chart(x_axis_type="categorical")
+cc.style.set_color_palette('categorical', 'Dark2')
 cc.plot.pie(
     data_frame=data,
     categorical_column="fruit",
     numeric_column="quantity",
     color_column="fruit",
+    radius=0.6,
 )
 cc.show()
