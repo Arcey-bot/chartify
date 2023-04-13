@@ -312,6 +312,10 @@ class PlotNumericXY(BasePlot):
         line_dash="solid",
         line_width=4,
         alpha=1.0,
+        hoverable=False,
+        hover_info=None,
+        hover_formatters=None,
+        hover_mode="mouse",
     ):
         """Line Chart.
 
@@ -372,6 +376,17 @@ class PlotNumericXY(BasePlot):
                 alpha=alpha,
                 y_range_name=self._y_range_name,
             )
+
+            if hoverable:
+                if hover_info is None:
+                    hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
+
+                hover = bokeh.models.HoverTool(
+                    tooltips=hover_info, 
+                    formatters=hover_formatters, 
+                    mode=hover_mode,
+                )
+                self._chart.figure.add_tools(hover)
 
         # Set legend defaults if there are multiple series.
         if color_column is not None:
