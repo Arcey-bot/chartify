@@ -90,6 +90,8 @@ ENV/
 
 .DS_Store
 
+.vscode/*
+
 # Test outputs
 tests/outputs/**/*.png
 tests/outputs/**/*.html
