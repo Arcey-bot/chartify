@@ -18,9 +18,11 @@ Module for chart plots.
 
 """
 
+from math import pi
 import bokeh
 import pandas as pd
 import numpy as np
+import chartify
 from chartify._core.colors import Color, color_palettes
 from chartify._core.axes import NumericalYMixin, NumericalXMixin
 
@@ -783,194 +785,7 @@ class PlotNumericDensityXY(BasePlot):
 
         return self._chart
     
-    def stacked_histogram(
-        self,
-        data_frame,
-        values_column,
-        color_column=None,
-        color_order=None,
-        method="count",
-        bins="auto",
-    ):
-        vertical = self._chart.axes._vertical
-
-        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
-
-        for color_value, color in zip(color_values, colors):
-            if color_column is None:  # Single line
-                sliced_data = data_frame[[values_column]]
-            else:
-                sliced_data = data_frame[data_frame[color_column] == color_value][[values_column]]
-
-            density = True if method == "density" else False
-            hist, edges = np.histogram(sliced_data, density=density, bins=bins)
-
-            if method == "mass":
-                hist = hist * 1.0 / hist.sum()
-            
-
-            histogram_data1 = pd.DataFrame({"values": hist, "min_edge": edges[:-1], "max_edge": edges[1:]})
-            histogram_data2 = pd.DataFrame({"values": hist[::-1], "min_edge": edges[:-1], "max_edge": edges[1:]})
-            histogram_data = pd.concat([histogram_data1, histogram_data2], ignore_index=True, sort=False)
-
-            source = self._named_column_data_source(histogram_data, series_name=color_value)
-
-            color_value = str(color_value) if color_value is not None else color_value
-
-            if vertical:
-                self._plot_with_legend(
-                    self._chart.figure.quad,
-                    legend_label=color_value,
-                    top="values",
-                    bottom=0,
-                    left="min_edge",
-                    right="max_edge",
-                    source=source,
-                    fill_color=color,
-                    line_color=color,
-                    alpha=0.3,
-                )
-
-            else:
-                self._plot_with_legend(
-                    self._chart.figure.quad,
-                    legend_label=color_value,
-                    top="max_edge",
-                    bottom="min_edge",
-                    left=0,
-                    right="values",
-                    source=source,
-                    fill_color=color,
-                    line_color=color,
-                    alpha=0.3,
-                )
-
-        # Set legend defaults if there are multiple series.
-        if color_column is not None:
-            self._chart.style._apply_settings("legend")
-
-        return self._chart
-
-    def cumulative_histogram(
-        self,
-        data_frame,
-        values_column,
-        color_column=None,
-        color_order=None,
-        method="count",
-        bins="auto",
-    ):
-        """
-        Calculates and plots a cumulative histogram of the given data source,
-        with options for grouping by color and choosing the method for
-        normalization.
-        
-        Args:
-            data_frame (pandas.DataFrame): Data source for the plot.
-            values_column (str): Column name for numeric values to be plotted.
-            color_column (str, optional): Column name to group by on the color
-                dimension.
-            color_order (list, optional): List of values within the
-                'color_column' for specific sorting of the colors.
-            method (str, optional):
-            - 'count': Result will contain the number of samples at each bin.
-            - 'density': Result is the value of the probability density
-                function at each bin.
-            The PDF is normalized so that the integral over the range is 1.
-            - 'mass': Result is the value of the probability mass function
-                at each bin.
-            The PMF is normalized so that the value is equivalent to the
-                sample count at each bin divided by the total count.
-            bins (int or sequence of scalars or str, optional):
-                If bins is an int, it defines the number of equal-width bins
-                in the given range.
-                If bins is a sequence, it defines the bin edges, including
-                the rightmost edge, allowing for non-uniform bin widths.
-            See numpy.histogram documentation for more details.
-            - ‘auto’:
-            Maximum of the ‘sturges’ and ‘fd’ estimators.
-            Provides good all around performance.
-            - ‘fd’ (Freedman Diaconis Estimator)
-            Robust (resilient to outliers) estimator that takes into account
-                data variability and data size.
-            - ‘doane’
-            An improved version of Sturges’ estimator that works better with
-                non-normal datasets.
-            - ‘scott’
-            Less robust estimator that that takes into account data variability
-                and data size.
-            - ‘rice’
-            Estimator does not take variability into account, only data size.
-                Commonly overestimates number of bins required.
-            - ‘sturges’
-            R’s default method, only accounts for data size.
-            Only optimal for gaussian data and underestimates number of bins
-                for large non-gaussian datasets.
-            - ‘sqrt’
-            Square root (of data size) estimator, used by Excel and other
-                programs for its speed and simplicity.
-        Returns:
-            bokeh.plotting.figure.Figure: A Bokeh figure object that can
-            be further customized and/or displayed.
-        """
-        vertical = self._chart.axes._vertical
-        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
-
-        offset = 0
-        for color_value, color in zip(color_values, colors):
-            if color_column is None:  # Single line
-                sliced_data = data_frame[[values_column]]
-            else:
-                sliced_data = data_frame[data_frame[color_column] == color_value][[values_column]]
-
-            density = True if method == "density" else False
-            hist, edges = np.histogram(sliced_data, density=density, bins=bins) 
-            cumsum = np.cumsum(hist)
-            f = lambda x: x + offset
-            hist = f(cumsum)
-
-            if method == "mass":
-                hist = hist * 1.0 / hist.sum()
-
-            histogram_data = pd.DataFrame({"values": hist, "min_edge": edges[:-1], "max_edge": edges[1:]})
-            source = self._named_column_data_source(histogram_data, series_name=color_value)
-            color_value = str(color_value) if color_value is not None else color_value
-
-            offset += cumsum[-1]
-            if vertical:
-                self._plot_with_legend(
-                    self._chart.figure.quad,
-                    legend_label=color_value,
-                    top="values",
-                    bottom=0,
-                    left="min_edge",
-                    right="max_edge",
-                    source=source,
-                    fill_color=color,
-                    line_color=color,
-                    alpha=0.3,
-                )
-
-            else:
-                self._plot_with_legend(
-                    self._chart.figure.quad,
-                    legend_label=color_value,
-                    top="max_edge",
-                    bottom="min_edge",
-                    left=0,
-                    right="values",
-                    source=source,
-                    fill_color=color,
-                    line_color=color,
-                    alpha=0.3,
-                )
-
-        # Set legend defaults if there are multiple series.
-        if color_column is not None:
-            self._chart.style._apply_settings("legend")
-
-        return self._chart
-
+    
     def kde(self, data_frame, values_column, color_column=None, color_order=None):
         """Kernel Density Estimate Plot.
 
@@ -1810,7 +1625,7 @@ class PlotMixedTypeXY(BasePlot):
             numeric_column,
             categorical_order_by=categorical_order_by,
             categorical_order_ascending=categorical_order_ascending,
-            color_column=color_column,
+            color_column=color_column
         )
 
         colors, color_values = self._get_color_and_order(data_frame, color_column, color_order, categorical_columns)
@@ -2650,3 +2465,119 @@ class PlotMixedTypeXY(BasePlot):
         )
 
         return self._chart
+
+    def pie(
+        self,
+        data_frame,
+        categorical_column,
+        numeric_column,
+        radius=0.6,
+        color_column=None,
+        color_order=None,
+        tooltip=True,
+        axis_visible=False
+    ):        
+        data = data_frame.reset_index()
+        colors, _ = self._get_color_and_order(data_frame, color_column, color_order)
+        data['angle'] = data[numeric_column]/data[numeric_column].sum() * 2* pi
+        data['color'] = colors
+
+        if color_column is None:
+            colors = colors[0]
+
+        if (tooltip):
+            self._chart.figure = bokeh.plotting.figure(tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
+
+        if (axis_visible):
+            self._chart.figure.axis.visible = False
+
+        self._chart.figure.axis.axis_label = None
+        self._chart.figure.grid.grid_line_color = None
+    
+        self._plot_with_legend(
+            self._chart.figure.wedge,
+            x=0,
+            y=0,
+            radius=radius,
+            start_angle=bokeh.transform.cumsum('angle', include_zero=True),
+            end_angle=bokeh.transform.cumsum('angle'),
+            line_color="white", 
+            source=data,
+            fill_color='color',
+            legend_field=categorical_column,
+        )
+
+        # Set legend defaults if there are multiple series.
+        if color_column is not None:
+            self._chart.style._apply_settings("legend")
+
+        return self._chart
+
+
+    def cumulative_histogram(
+        self,
+        data_frame,
+        values_column,
+        color_column=None,
+        color_order=None,
+        method="count",
+        bins="auto",
+    ):
+        vertical = self._chart.axes._vertical
+        colors, color_values = self._get_color_and_order(data_frame, color_column, color_order)
+
+        offset = 0
+        for color_value, color in zip(color_values, colors):
+            if color_column is None:  # Single line
+                sliced_data = data_frame[[values_column]]
+            else:
+                sliced_data = data_frame[data_frame[color_column] == color_value][[values_column]]
+
+            density = True if method == "density" else False
+            hist, edges = np.histogram(sliced_data, density=density, bins=bins) 
+            cumsum = np.cumsum(hist)
+            f = lambda x: x + offset
+            hist = f(cumsum)
+
+            if method == "mass":
+                hist = hist * 1.0 / hist.sum()
+
+            histogram_data = pd.DataFrame({"values": hist, "min_edge": edges[:-1], "max_edge": edges[1:]})
+            source = self._named_column_data_source(histogram_data, series_name=color_value)
+            color_value = str(color_value) if color_value is not None else color_value
+
+            offset += cumsum[-1]
+            if vertical:
+                self._plot_with_legend(
+                    self._chart.figure.quad,
+                    legend_label=color_value,
+                    top="values",
+                    bottom=0,
+                    left="min_edge",
+                    right="max_edge",
+                    source=source,
+                    fill_color=color,
+                    line_color=color,
+                    alpha=0.3,
+                )
+
+            else:
+                self._plot_with_legend(
+                    self._chart.figure.quad,
+                    legend_label=color_value,
+                    top="max_edge",
+                    bottom="min_edge",
+                    left=0,
+                    right="values",
+                    source=source,
+                    fill_color=color,
+                    line_color=color,
+                    alpha=0.3,
+                )
+
+        # Set legend defaults if there are multiple series.
+        if color_column is not None:
+            self._chart.style._apply_settings("legend")
+
+        return self._chart
+
