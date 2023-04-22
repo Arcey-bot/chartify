@@ -1016,8 +1016,10 @@ class PlotMixedTypeXY(BasePlot):
     """Plot functions for mixed type x & y axes:
 
     Methods:
+        - text
         - bar
         - bar_stacked
+        - interval
         - lollipop
         - parallel
         - boxplot
