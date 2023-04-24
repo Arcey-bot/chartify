@@ -663,21 +663,35 @@ class PlotNumericXY(BasePlot):
         self._set_numeric_axis_default_format(data_frame, x_column, y_column)
 
         if color_column is not None:
-            data_frame = (
-                data_frame.set_index([x_column, color_column])
-                .reindex(
-                    index=pd.MultiIndex.from_product(
-                        [
-                            data_frame[x_column].unique(),
-                            data_frame[color_column].unique(),
-                        ],
-                        names=[x_column, color_column],
+            if allow_nan:
+                data_frame = (
+                    data_frame.set_index([x_column, color_column])
+                    .reindex(
+                        index=pd.MultiIndex.from_product(
+                            [
+                                data_frame[x_column].unique(),
+                                data_frame[color_column].unique(),
+                            ],
+                            names=[x_column, color_column],
+                        )
                     )
+                    .reset_index(drop=False)
                 )
-                .reset_index(drop=False)
-            )
-            if not allow_nan:
-                data_frame.fillna(0)
+            else:
+                data_frame = (
+                    data_frame.set_index([x_column, color_column])
+                    .reindex(
+                        index=pd.MultiIndex.from_product(
+                            [
+                                data_frame[x_column].unique(),
+                                data_frame[color_column].unique(),
+                            ],
+                            names=[x_column, color_column],
+                        )
+                    )
+                    .reset_index(drop=False)
+                    .fillna(0)
+                )
 
         if second_y_column is None and color_column is not None:
             last_y = np.zeros(data_frame.groupby(color_column).size().iloc[0])
