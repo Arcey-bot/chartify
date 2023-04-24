@@ -302,7 +302,10 @@ class PlotCategoricalXY(BasePlot):
         radius=0.6,
         color_column=None,
         color_order=None,
-        tooltip=True,
+        hoverable=True,
+        hover_info={},
+        hover_formatters={},
+        hover_mode="mouse",
         axis_visible=False
     ):        
         data = data_frame.reset_index()
@@ -313,8 +316,16 @@ class PlotCategoricalXY(BasePlot):
         if color_column is None:
             colors = colors[0]
 
-        if (tooltip):
-            self._chart.figure = bokeh.plotting.figure(tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
+        if hoverable:
+                if not hover_info:
+                    hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
+
+                hover = bokeh.models.HoverTool(
+                    tooltips=hover_info, 
+                    formatters=hover_formatters, 
+                    mode=hover_mode,
+                )
+                self._chart.figure.add_tools(hover)
 
         if (axis_visible):
             self._chart.figure.axis.visible = False
@@ -363,8 +374,8 @@ class PlotNumericXY(BasePlot):
         line_width=4,
         alpha=1.0,
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Line Chart.
@@ -428,7 +439,7 @@ class PlotNumericXY(BasePlot):
             )
             
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -455,8 +466,8 @@ class PlotNumericXY(BasePlot):
         alpha=1.0,
         marker="circle",
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Scatter plot.
@@ -515,7 +526,7 @@ class PlotNumericXY(BasePlot):
             )
             
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -616,8 +627,8 @@ class PlotNumericXY(BasePlot):
         stacked=False,
         allow_nan=True,
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Area plot.
@@ -731,7 +742,7 @@ class PlotNumericXY(BasePlot):
                 )
                 
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -1006,8 +1017,7 @@ class PlotDensityXY(BasePlot):
     def hexbin(
         self,
         data_frame,
-        x_values_column,
-        y_values_column,
+        values_column,
         size,
         color_palette="Blues",
         reverse_color_order=False,
@@ -1045,8 +1055,8 @@ class PlotDensityXY(BasePlot):
         self._chart.figure.match_aspect = True
         self._chart.figure.aspect_scale = aspect_scale
         self._chart.figure.hexbin(
-            data_frame[x_values_column],
-            data_frame[y_values_column],
+            data_frame[values_column],
+            data_frame[values_column],
             size=size,
             orientation=orientation,
             aspect_scale=aspect_scale,
