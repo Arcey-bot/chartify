@@ -57,7 +57,7 @@ df = pd.DataFrame(data=d)
 # print(df)
 
 c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
-c.set_title('Unstacked Area chart')
+c.set_title('Unstacked Area chart - Allow NAN')
 c.set_subtitle('Show overlapping values. Automatically adjusts opacity.')
 c.set_source_label('Source: Example Data')
 c.axes.set_xaxis_label('Unit price for a fruit batch')
@@ -90,6 +90,25 @@ c.plot.area(
     second_y_column='unit_price',
     color_column='country',
     stacked=False,
+    allow_nan=True,
+)
+c.show()
+
+c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
+c.set_title('Unstacked Area chart - Disallow NAN')
+c.set_subtitle('Show overlapping values. Automatically adjusts opacity.')
+c.set_source_label('Source: Example Data')
+c.axes.set_xaxis_label('Unit price for a fruit batch')
+c.axes.set_yaxis_label('Number of fruits')
+c.style.set_color_palette('categorical', 'Dark2')
+c.plot.area(
+    data_frame=data,
+    x_column='date',
+    y_column='total_price',
+    second_y_column='unit_price',
+    color_column='country',
+    stacked=False,
+    allow_nan=False,
 )
 # data = example_data()
 # data = data.groupby([data["date"] + pd.offsets.MonthBegin(-1), "fruit",],)["quantity"].sum().reset_index().sort_values("date")
@@ -97,9 +116,9 @@ c.plot.area(
 #     data_frame=data,
 #     x_column='date',
 #     y_column='quantity',
-#     # second_y_column='unit_price',
+#     second_y_column='unit_price',
 #     color_column='fruit',
-#     stacked=False,
+#     stacked=True,
 # )
 # c.plot.area(
 #     data_frame=total_quantity_by_month_and_fruit,
