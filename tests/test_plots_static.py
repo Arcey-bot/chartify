@@ -7,10 +7,10 @@ import pandas as pd
 
 def main():
     data = chartify.examples.example_data()
-    print(data.head())
+    # print(data.head())
 
     # *** Set c to any test method here ***
-    c = test_scatter_hoverable(data)
+    c = test_parallel(data)
 
     c.show()
 
@@ -182,6 +182,45 @@ def test_area_allow_nan(df):
         stacked=False,
     )
 
+    return c
+
+def test_parallel(df):
+    data = df
+    total_quantity_by_month_and_fruit = (
+        data.groupby([data["date"] + pd.offsets.MonthBegin(-1), "fruit"])["quantity"]
+        .sum()
+        .reset_index()
+        .rename(columns={"date": "month"})
+        .sort_values("month")
+    )
+    
+    total_quantity_by_month_and_fruit = total_quantity_by_month_and_fruit[total_quantity_by_month_and_fruit.fruit != 'Apple']
+    total_quantity_by_month_and_fruit = total_quantity_by_month_and_fruit[total_quantity_by_month_and_fruit.fruit != 'Grape']
+    total_quantity_by_month_and_fruit['total_price'] = df['total_price']
+
+    total_quantity_by_month_and_fruit['quantity'].iloc[8:10] = np.nan
+    total_quantity_by_month_and_fruit['quantity'].iloc[-7:] = np.nan
+    total_quantity_by_month_and_fruit['quantity'].iloc[-1] = -10
+
+    print(total_quantity_by_month_and_fruit)
+
+    c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
+    c.set_title('Unstacked Area chart')
+    c.set_subtitle('Show overlapping values. Automatically adjusts opacity.')
+    c.set_source_label('Source: Example Data')
+    c.axes.set_xaxis_label('Unit price for a fruit batch')
+    c.axes.set_yaxis_label('Number of fruits')
+    c.style.set_color_palette('categorical', 'Dark2')
+    c.plot.area(
+        data_frame=total_quantity_by_month_and_fruit,
+        x_column='month',
+        y_column='quantity',
+        second_y_column='total_price',
+        color_column='fruit',
+        stacked=False,
+        allow_nan=True,
+    )
+    
     return c
 
 def test_horizontal_categorical_cumulative_histogram(df):
