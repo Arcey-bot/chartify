@@ -302,7 +302,10 @@ class PlotCategoricalXY(BasePlot):
         radius=0.6,
         color_column=None,
         color_order=None,
-        tooltip=True,
+        hoverable=True,
+        hover_info=None,
+        hover_formatters=None,
+        hover_mode="mouse",
         axis_visible=False
     ):        
         data = data_frame.reset_index()
@@ -313,8 +316,16 @@ class PlotCategoricalXY(BasePlot):
         if color_column is None:
             colors = colors[0]
 
-        if (tooltip):
-            self._chart.figure = bokeh.plotting.figure(tools="hover", tooltips=f"@{categorical_column}: @{numeric_column}")
+        if hoverable:
+                if hover_info is None:
+                    hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
+
+                hover = bokeh.models.HoverTool(
+                    tooltips=hover_info, 
+                    formatters=hover_formatters, 
+                    mode=hover_mode,
+                )
+                self._chart.figure.add_tools(hover)
 
         if (axis_visible):
             self._chart.figure.axis.visible = False
