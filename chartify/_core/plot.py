@@ -1246,6 +1246,80 @@ class PlotMixedTypeXY(BasePlot):
         ]
 
         return quantiles_and_bounds, outliers
+    
+    def _construct_stack_source(
+        self,
+        data_frame,
+        categorical_columns,
+        numeric_column,
+        stack_column=None,
+        normalize=False,
+        categorical_order_by=None,
+        categorical_order_ascending=False,
+        color_column=None,
+    ):
+        if not isinstance(categorical_columns, str):
+            categorical_columns = [c for c in categorical_columns]
+        else:
+            categorical_columns = [categorical_columns]
+
+        # Check that there's only one row per grouping
+        grouping = categorical_columns[:]
+        if stack_column is not None:
+            grouping.append(stack_column)
+        rows_per_grouping = data_frame.groupby(grouping).size()
+        max_one_row_per_grouping = all(rows_per_grouping <= 1)
+        if not max_one_row_per_grouping:
+            raise ValueError(
+                """Each categorical grouping should have at most 1 observation.Group the dataframe and aggregate before passing tothe plot function."""
+            )
+
+        # Cast stack column to strings
+        # Plotting functions will break with non-str types.
+        type_map = {}
+        if stack_column is not None:
+            type_map[stack_column] = str
+        # Apply mapping within pivot so original data frame isn't modified.
+        source = pd.pivot_table(
+            data_frame.astype(type_map),
+            columns=stack_column,
+            index=categorical_columns,
+            values=numeric_column,
+            aggfunc="sum",
+        )
+        # NA columns break the stacks
+        # Might want to make this conditional in the future for parallel plots.
+        source = source.fillna(0)
+
+        if color_column:
+            # Merge color column
+            color_df = data_frame.astype(type_map)
+            color_df["color_column"] = color_df[color_column].astype(str)
+            color_df = color_df.set_index(categorical_columns)["color_column"]
+            source = source.join(color_df)
+
+        # Normalize values at the grouped levels.
+        # Only relevant for stacked objects
+        if normalize:
+            source = source.div(source.sum(axis=1), axis=0)
+
+        source = self._sort_categories(source, categorical_columns, categorical_order_by, categorical_order_ascending)
+
+        # Cast all categorical columns to strings
+        # Plotting functions will break with non-str types.
+        if isinstance(source.index, pd.MultiIndex):
+            for level in range(len(source.index.levels)):
+                source.index = source.index.set_levels(source.index.levels[level].astype(str), level=level)
+        else:
+            source.index = source.index.astype(str)
+
+        factors = source.index
+        source = source.reset_index(drop=True)
+        stack_values = source.columns
+        source = self._named_column_data_source(source, series_name=None)
+        source.add(factors, "factors")
+
+        return source, factors, stack_values
 
     def text(
         self,
@@ -1506,81 +1580,6 @@ class PlotMixedTypeXY(BasePlot):
             cumulative_numeric_value = cumulative_numeric_value + source.data[color_value] * 0.5
 
         return self._chart
-
-    def _construct_stack_source(
-        self,
-        data_frame,
-        categorical_columns,
-        numeric_column,
-        stack_column=None,
-        normalize=False,
-        categorical_order_by=None,
-        categorical_order_ascending=False,
-        color_column=None,
-    ):
-        if not isinstance(categorical_columns, str):
-            categorical_columns = [c for c in categorical_columns]
-        else:
-            categorical_columns = [categorical_columns]
-
-        # Check that there's only one row per grouping
-        grouping = categorical_columns[:]
-        if stack_column is not None:
-            grouping.append(stack_column)
-        rows_per_grouping = data_frame.groupby(grouping).size()
-        max_one_row_per_grouping = all(rows_per_grouping <= 1)
-        if not max_one_row_per_grouping:
-            raise ValueError(
-                """Each categorical grouping should have at most 1 observation.Group the dataframe and aggregate before passing tothe plot function."""
-            )
-
-        # Cast stack column to strings
-        # Plotting functions will break with non-str types.
-        type_map = {}
-        if stack_column is not None:
-            type_map[stack_column] = str
-        # Apply mapping within pivot so original data frame isn't modified.
-        source = pd.pivot_table(
-            data_frame.astype(type_map),
-            columns=stack_column,
-            index=categorical_columns,
-            values=numeric_column,
-            aggfunc="sum",
-        )
-        # NA columns break the stacks
-        # Might want to make this conditional in the future for parallel plots.
-        source = source.fillna(0)
-
-        if color_column:
-            # Merge color column
-            color_df = data_frame.astype(type_map)
-            color_df["color_column"] = color_df[color_column].astype(str)
-            color_df = color_df.set_index(categorical_columns)["color_column"]
-            source = source.join(color_df)
-
-        # Normalize values at the grouped levels.
-        # Only relevant for stacked objects
-        if normalize:
-            source = source.div(source.sum(axis=1), axis=0)
-
-        source = self._sort_categories(source, categorical_columns, categorical_order_by, categorical_order_ascending)
-
-        # Cast all categorical columns to strings
-        # Plotting functions will break with non-str types.
-        if isinstance(source.index, pd.MultiIndex):
-            for level in range(len(source.index.levels)):
-                source.index = source.index.set_levels(source.index.levels[level].astype(str), level=level)
-        else:
-            source.index = source.index.astype(str)
-
-        factors = source.index
-        source = source.reset_index(drop=True)
-        stack_values = source.columns
-        source = self._named_column_data_source(source, series_name=None)
-        source.add(factors, "factors")
-
-        return source, factors, stack_values
-
 
     def text_stacked_total(
         self,
