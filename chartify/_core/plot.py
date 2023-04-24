@@ -303,8 +303,8 @@ class PlotCategoricalXY(BasePlot):
         color_column=None,
         color_order=None,
         hoverable=True,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
         axis_visible=False
     ):        
@@ -317,7 +317,7 @@ class PlotCategoricalXY(BasePlot):
             colors = colors[0]
 
         if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -374,8 +374,8 @@ class PlotNumericXY(BasePlot):
         line_width=4,
         alpha=1.0,
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Line Chart.
@@ -439,7 +439,7 @@ class PlotNumericXY(BasePlot):
             )
             
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -466,8 +466,8 @@ class PlotNumericXY(BasePlot):
         alpha=1.0,
         marker="circle",
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Scatter plot.
@@ -526,7 +526,7 @@ class PlotNumericXY(BasePlot):
             )
             
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
@@ -627,8 +627,8 @@ class PlotNumericXY(BasePlot):
         stacked=False,
         allow_nan=True,
         hoverable=False,
-        hover_info=None,
-        hover_formatters=None,
+        hover_info={},
+        hover_formatters={},
         hover_mode="mouse",
     ):
         """Area plot.
@@ -742,7 +742,7 @@ class PlotNumericXY(BasePlot):
                 )
                 
             if hoverable:
-                if hover_info is None:
+                if not hover_info:
                     hover_info = [(x_column, f"@{x_column}"), (y_column, f"@{y_column}")]
 
                 hover = bokeh.models.HoverTool(
