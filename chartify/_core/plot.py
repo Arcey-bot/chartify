@@ -1017,8 +1017,7 @@ class PlotDensityXY(BasePlot):
     def hexbin(
         self,
         data_frame,
-        x_values_column,
-        y_values_column,
+        values_column,
         size,
         color_palette="Blues",
         reverse_color_order=False,
@@ -1056,8 +1055,8 @@ class PlotDensityXY(BasePlot):
         self._chart.figure.match_aspect = True
         self._chart.figure.aspect_scale = aspect_scale
         self._chart.figure.hexbin(
-            data_frame[x_values_column],
-            data_frame[y_values_column],
+            data_frame[values_column],
+            data_frame[values_column],
             size=size,
             orientation=orientation,
             aspect_scale=aspect_scale,
