@@ -10,7 +10,7 @@ def main():
     print(data.head())
 
     # *** Set c to any test method here ***
-    c = test_horizontal_stacked_bar_text_total(data)
+    c = test_scatter_hoverable(data)
 
     c.show()
 
@@ -153,7 +153,7 @@ def test_area_allow_nan(df):
     c.axes.set_yaxis_label('Number of fruits')
     c.style.set_color_palette('categorical', 'Dark2')
 
-    data = example_data()
+    data = df
     data = data.groupby([data["date"] + pd.offsets.MonthBegin(-1), "country",],).sum().reset_index().sort_values("date")
     data = data[data.country != 'GB']
     data = data[data.country != 'BR']
@@ -240,6 +240,35 @@ def test_vertical_unified_cumulative_histogram(df):
         values_column="unit_price",
     )
 
+    return c
+
+def test_line_hoverable(df):
+    c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
+    price_by_date = df.groupby("date")["total_price"].sum().reset_index()  # Move 'date' from index to column
+
+    # Plot the data
+    c.set_title("Line charts")
+    c.set_subtitle("Plot two numeric values connected by an ordered line.")
+
+    # price_by_date["date"] = price_by_date["date"].apply(lambda x : str(x.date()))
+    c.plot.line(   
+        data_frame=price_by_date.sort_values("date"),
+        x_column="date",
+        y_column="total_price",
+        hoverable=True,
+        hover_info=[("date", "@date{%F}"), ("total_price", "@total_price")],
+        hover_formatters={"@date": "datetime"},
+        hover_mode="vline",
+    )
+
+    return c
+
+def test_scatter_hoverable(df):
+    c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
+    c.plot.scatter(data_frame=df, x_column="date", y_column="unit_price", hoverable=True, hover_formatters={})
+    c.set_title("Scatterplot")
+    c.set_subtitle("Plot two numeric values.")
+    
     return c
 
 if __name__ == '__main__':
