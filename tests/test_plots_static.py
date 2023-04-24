@@ -10,7 +10,7 @@ def main():
     print(data.head())
 
     # *** Set c to any test method here ***
-    c = test_area_allow_nan(data)
+    c = test_horizontal_stacked_bar_text_total(data)
 
     c.show()
 
@@ -140,6 +140,46 @@ def test_pie(df):
         categorical_column="fruit",
         numeric_column="quantity",
         color_column="fruit",
+    )
+
+    return c
+
+def test_area_allow_nan(df):
+    c = chartify.Chart(blank_labels=True, x_axis_type="datetime")
+    c.set_title('Unstacked Area chart')
+    c.set_subtitle('Show overlapping values. Automatically adjusts opacity.')
+    c.set_source_label('Source: Example Data')
+    c.axes.set_xaxis_label('Unit price for a fruit batch')
+    c.axes.set_yaxis_label('Number of fruits')
+    c.style.set_color_palette('categorical', 'Dark2')
+
+    data = example_data()
+    data = data.groupby([data["date"] + pd.offsets.MonthBegin(-1), "country",],).sum().reset_index().sort_values("date")
+    data = data[data.country != 'GB']
+    data = data[data.country != 'BR']
+
+    # Tests NaN value input reading
+    # Delete at ends for US and CA
+    data['unit_price'].iloc[-1] = np.nan
+    data['total_price'].iloc[-1] = np.nan
+    data['unit_price'].iloc[-2] = np.nan
+    data['total_price'].iloc[-2] = np.nan
+    data['unit_price'].iloc[-4] = np.nan
+    data['total_price'].iloc[-4] = np.nan
+
+    # Delete 2 US in middle of area
+    data['unit_price'].iloc[-18] = np.nan
+    data['total_price'].iloc[-18] = np.nan
+    data['unit_price'].iloc[-19] = np.nan
+    # data['total_price'].iloc[-19] = np.nan
+
+    c.plot.area(
+        data_frame=data,
+        x_column='date',
+        y_column='total_price',
+        second_y_column='unit_price',
+        color_column='country',
+        stacked=False,
     )
 
     return c
